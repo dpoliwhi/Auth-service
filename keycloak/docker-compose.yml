@@ -1,14 +1,14 @@
 services:
   keycloak-postgres:
     image: library/postgres:${KC_POSTGRES_IMAGE_TAG}
-    container_name: ${POSTGRES_CONTAINER_NAME}
+    container_name: ${KC_POSTGRES_CONTAINER_NAME}
     restart: on-failure
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${KC_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${KC_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${KC_POSTGRES_DB}
     healthcheck:
-      test: pg_isready -d ${POSTGRES_USER}
+      test: pg_isready -d ${KC_POSTGRES_USER}
       interval: 10s
       timeout: 5s
       retries: 3
@@ -40,7 +40,7 @@ services:
       - ./entrypoint.sh:/opt/keycloak/entrypoint.sh
       - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
     ports:
-      - 8282:8080
+      - ${KC_PORT_MAPPING}:8080
     depends_on:
       keycloak-postgres:
         condition: service_healthy
@@ -50,3 +50,22 @@ services:
       interval: 30s
       retries: 3
       timeout: 5s
+
+  postgres-auth-service:
+    container_name: postgres-auth-service
+    image: postgres:14-alpine
+    ports:
+      - ${POSTGRES_PORT_MAPPING}:5432
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+    driver: bridge
