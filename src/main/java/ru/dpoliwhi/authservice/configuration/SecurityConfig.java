@@ -78,6 +78,9 @@ public class SecurityConfig {
     }
 
     private List<GrantedAuthority> getCustomRoles(List<String> roles) {
+        if (roles == null) {
+            return List.of();
+        }
         return roles.stream()
                 .filter(role -> role.startsWith("ROLE_"))
                 .map(SimpleGrantedAuthority::new)
